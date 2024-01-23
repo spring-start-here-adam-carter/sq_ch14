@@ -1,5 +1,6 @@
 package com.example.sq_ch14.services;
 
+import com.example.sq_ch14.exceptions.AccountNotFoundException;
 import com.example.sq_ch14.model.Account;
 import com.example.sq_ch14.repositories.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -14,8 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TransferServiceUnitTests {
@@ -55,5 +55,26 @@ class TransferServiceUnitTests {
 
         verify(accountRepository)
                 .changeAmount(2, new BigDecimal(1100));
+    }
+
+    @Test
+    public void moneyTransferDestinationAccountNotFoundFlow() {
+        Account sender = new Account();
+        sender.setId(1);
+        sender.setAmount(new BigDecimal(1000));
+
+        given(accountRepository.findById(1L))
+                .willReturn(Optional.of(sender));
+
+        given(accountRepository.findById(2L))
+                .willReturn(Optional.empty());
+
+        assertThrows(
+                AccountNotFoundException.class,
+                () -> transferService.transferMoney(
+                        1, 2, new BigDecimal(100)));
+
+        verify(accountRepository, never())
+                .changeAmount(anyLong(), any());
     }
 }
